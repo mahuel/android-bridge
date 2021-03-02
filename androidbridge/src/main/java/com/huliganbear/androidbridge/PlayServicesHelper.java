@@ -19,15 +19,19 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.huliganbear.androidbridge.callbacks.SignInCallback;
+import com.huliganbear.androidbridge.callbacks.SignOutCallback;
 
 import java.io.IOException;
 import java.util.Date;
 import java.util.Objects;
 
+import static com.huliganbear.androidbridge.SignInActivity.REQUEST_CODE_SIGN_IN;
+
 public class PlayServicesHelper {
 
     private GoogleSignInAccount googleSignInAccount;
     private SnapshotsClient snapshotsClient;
+    private GoogleSignInClient signInClient;
 
     public SignInCallback signInCallback;
 
@@ -46,6 +50,28 @@ public class PlayServicesHelper {
         return instance;
     }
 
+    public void signOut(Activity activity, SignOutCallback signOutCallback) {
+        Log.d("TEST123", "starting signout");
+        signInClient.signOut().addOnCompleteListener(activity,
+                new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        if (task.isSuccessful()) {
+                            signOutCallback.onSignOutSuccess();
+                        } else {
+                            Log.d("TEST123", "failed to signout", task.getException());
+                            signOutCallback.onSignOutFailed();
+                        }
+                    }
+                }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Log.d("TEST123", "failed to signout", e);
+                signOutCallback.onSignOutFailed();
+            }
+        });
+    }
+
 
     public void signIn(Activity activity, SignInCallback signInCallback) {
         Log.d("TEST123", "starting sign in method");
@@ -54,7 +80,7 @@ public class PlayServicesHelper {
                         .requestScopes(Games.SCOPE_GAMES_SNAPSHOTS, Games.SCOPE_GAMES_LITE)
                         .build();
         Log.d("TEST123", "created options");
-        GoogleSignInClient signInClient = GoogleSignIn.getClient(activity, signInOption);
+        signInClient = GoogleSignIn.getClient(activity, signInOption);
         Log.d("TEST123", "created signIn client");
         this.signInCallback = signInCallback;
         signInClient.silentSignIn().addOnCompleteListener(new OnCompleteListener<GoogleSignInAccount>() {
@@ -69,12 +95,6 @@ public class PlayServicesHelper {
                     // Player will need to sign-in explicitly using via UI
                 }
 
-            }
-        }).addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(@NonNull Exception e) {
-                Log.d("TEST123", "onFailure sign in unsuccessful");
-                signInCallback.onSignInFailed();
             }
         });
     }
@@ -96,18 +116,14 @@ public class PlayServicesHelper {
     }
 
     public void saveGame(String data, Activity activity) {
-        Log.d("TEST123", "getting snapshot client");
         this.snapshotsClient =
                 Games.getSnapshotsClient(activity, Objects.requireNonNull(GoogleSignIn.getLastSignedInAccount(activity)));
-        Log.d("TEST123", "generating openTask");
         Task<SnapshotsClient.DataOrConflict<Snapshot>> openTask = this.snapshotsClient.open(FILE_NAME, true, SnapshotsClient.RESOLUTION_POLICY_MOST_RECENTLY_MODIFIED);
         openTask.addOnSuccessListener(new OnSuccessListener<SnapshotsClient.DataOrConflict<Snapshot>>() {
             @Override
             public void onSuccess(SnapshotsClient.DataOrConflict<Snapshot> snapshotDataOrConflict) {
-                Log.d("TEST123", "open task onSuccess");
                 Snapshot snapshot = snapshotDataOrConflict.getData();
                 if (snapshot != null) {
-                    Log.d("TEST123", "snapshot not null");
                     writeToSnapshotAndSave(snapshot, data);
                 }
             }
@@ -152,9 +168,7 @@ public class PlayServicesHelper {
     }
 
     private void writeToSnapshotAndSave(Snapshot snapshot, String data) {
-        Log.d("TEST123", "writing to snapshot");
         snapshot.getSnapshotContents().writeBytes(data.getBytes());
-        Log.d("TEST123", "creating metadata change for snapshot");
         SnapshotMetadataChange metadataChange = new SnapshotMetadataChange.Builder()
                 .setDescription(new Date().toString() + "save data")
                 .build();

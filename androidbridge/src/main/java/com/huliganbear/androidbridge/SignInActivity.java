@@ -1,5 +1,6 @@
 package com.huliganbear.androidbridge;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -13,9 +14,11 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.auth.api.signin.GoogleSignInResult;
+import com.google.android.gms.auth.api.signin.internal.SignInConfiguration;
+import com.unity3d.player.UnityPlayer;
 
-public class SignInActivity extends AppCompatActivity {
-    private static int REQUEST_CODE_SIGN_IN = 200;
+public class SignInActivity extends Activity {
+    public static int REQUEST_CODE_SIGN_IN = 200;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -23,10 +26,9 @@ public class SignInActivity extends AppCompatActivity {
         Log.d("TEST123", "activity started starting signin intent");
 
         GoogleSignInClient signInClient = GoogleSignIn.getClient(this,
-                GoogleSignInOptions.DEFAULT_GAMES_SIGN_IN);
+                GoogleSignInOptions.DEFAULT_SIGN_IN);
         Intent intent = signInClient.getSignInIntent();
         startActivityForResult(intent, REQUEST_CODE_SIGN_IN);
-
     }
 
     @Override
