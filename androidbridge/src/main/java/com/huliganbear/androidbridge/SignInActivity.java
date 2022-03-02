@@ -45,6 +45,8 @@ public class SignInActivity extends Activity {
                     PlayServicesHelper.getInstance().onConnect(signedInAccount, this);
                     finish();
                     return;
+                } else {
+                    Log.d("TEST123", "sign in status:" + result.getStatus());
                 }
             }
             Log.d("TEST123", "unsuccessful signin intent ");
@@ -52,6 +54,4 @@ public class SignInActivity extends Activity {
             finish();
         }
     }
-
-
 }
